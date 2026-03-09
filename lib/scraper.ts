@@ -1,4 +1,5 @@
 import * as cheerio from "cheerio";
+import type { Element } from "domhandler";
 
 export interface ScrapedSite {
   url: string;
@@ -37,7 +38,7 @@ const SECTION_PATTERNS: Record<string, RegExp[]> = {
 };
 
 function detectSectionType(
-  el: cheerio.Element,
+  el: Element,
   $: cheerio.CheerioAPI
 ): { type: string; confidence: "high" | "medium" | "low" } {
   const elem = $(el);
