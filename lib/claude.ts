@@ -1,9 +1,15 @@
-import Anthropic from "@anthropic-ai/sdk";
+import OpenAI from "openai";
 import { SitePlan, GeneratePlanInput } from "./types";
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY!,
+const groq = new OpenAI({
+  apiKey: process.env.GROQ_API_KEY!,
+  baseURL: "https://api.groq.com/openai/v1",
 });
+
+// Text model — supports JSON mode for reliable structured output
+const TEXT_MODEL = "llama-3.3-70b-versatile";
+// Vision model — for wireframe image input
+const VISION_MODEL = "meta-llama/llama-4-scout-17b-16e-instruct";
 
 // ─── Planner Agent ────────────────────────────────────────────────────────────
 
@@ -17,7 +23,7 @@ Given a user's description, URL analysis, or wireframe, you produce a complete s
 
 Valid section types: hero, navbar, features, about, services, portfolio, testimonials, pricing, team, cta, contact, faq, blog, footer, custom
 
-Respond ONLY with a valid JSON object matching this exact schema. No markdown, no explanation, just JSON:
+You MUST respond with ONLY a valid JSON object matching this exact schema. No markdown, no explanation, no code fences — just raw JSON:
 {
   "siteName": string,
   "siteTagline": string,
@@ -81,45 +87,51 @@ Focus on the page structure, section types, and design direction that would work
       "Analyze this wireframe and create a complete Elementor site plan based on the layout and structure shown.";
   }
 
-  const messages: Anthropic.MessageParam[] = [
-    {
-      role: "user",
-      content:
-        input.mode === "wireframe" && input.wireframeBase64
-          ? [
-              {
-                type: "image",
-                source: {
-                  type: "base64",
-                  media_type: "image/png",
-                  data: input.wireframeBase64,
-                },
+  // Wireframe mode uses vision model (no JSON mode support)
+  if (input.mode === "wireframe" && input.wireframeBase64) {
+    const response = await groq.chat.completions.create({
+      model: VISION_MODEL,
+      max_tokens: 4096,
+      messages: [
+        { role: "system", content: PLANNER_SYSTEM },
+        {
+          role: "user",
+          content: [
+            {
+              type: "image_url",
+              image_url: {
+                url: `data:image/png;base64,${input.wireframeBase64}`,
               },
-              { type: "text", text: userMessage },
-            ]
-          : userMessage,
-    },
-  ];
+            },
+            { type: "text", text: userMessage },
+          ],
+        },
+      ],
+    });
 
-  const response = await anthropic.messages.create({
-    model: "claude-opus-4-6",
+    const text = response.choices[0].message.content ?? "";
+    const clean = text.replace(/```json\n?|```\n?/g, "").trim();
+    return JSON.parse(clean) as SitePlan;
+  }
+
+  // Text/URL mode — use JSON mode for guaranteed structured output
+  const response = await groq.chat.completions.create({
+    model: TEXT_MODEL,
     max_tokens: 4096,
-    system: PLANNER_SYSTEM,
-    messages,
+    response_format: { type: "json_object" },
+    messages: [
+      { role: "system", content: PLANNER_SYSTEM },
+      { role: "user", content: userMessage },
+    ],
   });
 
-  const text = response.content
-    .filter((b) => b.type === "text")
-    .map((b) => (b as Anthropic.TextBlock).text)
-    .join("");
-
-  const clean = text.replace(/```json\n?|```\n?/g, "").trim();
-  return JSON.parse(clean) as SitePlan;
+  const text = response.choices[0].message.content ?? "";
+  return JSON.parse(text) as SitePlan;
 }
 
 // ─── Reviewer Agent ───────────────────────────────────────────────────────────
 
-const REVIEWER_SYSTEM = `You are a senior Elementor developer reviewing a site plan for quality and completeness. 
+const REVIEWER_SYSTEM = `You are a senior Elementor developer reviewing a site plan for quality and completeness.
 
 Review the site plan and return a JSON object with:
 {
@@ -138,7 +150,7 @@ Check for:
 - Design tokens form a cohesive palette
 - No duplicate page slugs
 
-Respond ONLY with valid JSON.`;
+You MUST respond with ONLY valid JSON. No markdown, no explanation, no code fences.`;
 
 export async function reviewSitePlan(plan: SitePlan): Promise<{
   approved: boolean;
@@ -147,11 +159,12 @@ export async function reviewSitePlan(plan: SitePlan): Promise<{
   suggestions: string[];
   refinedPlan: SitePlan | null;
 }> {
-  const response = await anthropic.messages.create({
-    model: "claude-opus-4-6",
+  const response = await groq.chat.completions.create({
+    model: TEXT_MODEL,
     max_tokens: 4096,
-    system: REVIEWER_SYSTEM,
+    response_format: { type: "json_object" },
     messages: [
+      { role: "system", content: REVIEWER_SYSTEM },
       {
         role: "user",
         content: `Review this site plan and fix any issues:\n\n${JSON.stringify(plan, null, 2)}`,
@@ -159,11 +172,6 @@ export async function reviewSitePlan(plan: SitePlan): Promise<{
     ],
   });
 
-  const text = response.content
-    .filter((b) => b.type === "text")
-    .map((b) => (b as Anthropic.TextBlock).text)
-    .join("");
-
-  const clean = text.replace(/```json\n?|```\n?/g, "").trim();
-  return JSON.parse(clean);
+  const text = response.choices[0].message.content ?? "";
+  return JSON.parse(text);
 }
