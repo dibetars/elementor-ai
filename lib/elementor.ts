@@ -85,9 +85,16 @@ function radiusFromTokens(tokens: DesignTokens): number {
 }
 
 // ─── Section Component Library ────────────────────────────────────────────────
-// Each factory returns a fully valid ElementorSection using real widget types.
+// All widgets use FREE Elementor only — no Pro required.
 
 export function buildNavbar(tokens: DesignTokens, siteName: string, navItems: string[]): ElementorSection {
+  const navLinks = navItems
+    .map(
+      (item) =>
+        `<a href="#${item.toLowerCase().replace(/\s+/g, "-")}" style="margin-left:24px;color:${tokens.textColor};text-decoration:none;font-family:'${tokens.bodyFont}',sans-serif;font-size:15px;font-weight:500">${item}</a>`
+    )
+    .join("");
+
   return makeSection(
     {
       layout: "full_width",
@@ -97,7 +104,7 @@ export function buildNavbar(tokens: DesignTokens, siteName: string, navItems: st
       padding: { unit: "px", top: "0", bottom: "0", left: "20", right: "20", isLinked: false },
     },
     [
-      makeColumn(33, [
+      makeColumn(40, [
         makeWidget("heading", {
           title: siteName,
           header_size: "h3",
@@ -107,16 +114,12 @@ export function buildNavbar(tokens: DesignTokens, siteName: string, navItems: st
           title_color: tokens.textColor,
         }),
       ]),
-      makeColumn(67, [
-        makeWidget("nav-menu", {
-          layout: "horizontal",
-          align_items: "center",
-          text_align: "right",
-          typography_font_family: tokens.bodyFont,
-          color: tokens.textColor,
-          custom_css_class: "site-nav",
+      makeColumn(60, [
+        // FREE: html widget instead of Pro nav-menu
+        makeWidget("html", {
+          html: `<div style="display:flex;align-items:center;justify-content:flex-end;height:80px">${navLinks}</div>`,
         }),
-      ], { "align": "right" }),
+      ]),
     ]
   );
 }
@@ -129,7 +132,6 @@ export function buildHero(tokens: DesignTokens, hints: string[]): ElementorSecti
       background_background: "classic",
       background_color: tokens.backgroundColor,
       padding: { unit: "px", top: String(top * 2), bottom: String(bottom * 2), left: "20", right: "20", isLinked: false },
-      content_width: { unit: "px", size: 1200 },
     },
     [
       makeColumn(100, [
@@ -166,20 +168,22 @@ export function buildFeatures(tokens: DesignTokens, hints: string[], columns: nu
   const colSize = Math.floor(100 / columns);
   const featureCols = Array.from({ length: columns }, (_, i) =>
     makeColumn(colSize, [
-      makeWidget("icon", {
-        selected_icon: { library: "solid", value: ["fas", "star"] },
-        primary_color: tokens.primaryColor,
-        size: { unit: "px", size: 40 },
-      }),
-      makeWidget("heading", {
-        title: hints[i] || `Feature ${i + 1}`,
-        header_size: "h4",
-        typography_font_family: tokens.headingFont,
-        typography_font_weight: "600",
+      // FREE: icon-box widget (image + title + description in one, no Pro needed)
+      makeWidget("icon-box", {
+        selected_icon: { library: "solid", value: "fas fa-star" },
+        title_text: hints[i] || `Feature ${i + 1}`,
+        description_text: "A clear description of this feature and the value it delivers to your users.",
+        icon_color: tokens.primaryColor,
         title_color: tokens.textColor,
-      }),
-      makeWidget("text-editor", {
-        editor: `<p style="color:${tokens.textColor}88">A clear description of this feature and the value it delivers to your users.</p>`,
+        description_color: tokens.textColor + "99",
+        title_typography_font_family: tokens.headingFont,
+        title_typography_font_weight: "600",
+        description_typography_font_family: tokens.bodyFont,
+        icon_size: { unit: "px", size: 36 },
+        icon_padding: { unit: "px", top: "12", right: "12", bottom: "12", left: "12", isLinked: true },
+        icon_primary_color: tokens.primaryColor,
+        view: "default",
+        position: "top",
       }),
     ])
   );
@@ -256,7 +260,7 @@ export function buildServices(tokens: DesignTokens, hints: string[]): ElementorS
           icon_list: hints.map((hint) => ({
             id: uid(),
             text: hint,
-            selected_icon: { library: "solid", value: ["fas", "check"] },
+            selected_icon: { library: "solid", value: "fas fa-check" },
             link: { url: "" },
           })),
           icon_color: tokens.accentColor,
@@ -291,6 +295,7 @@ export function buildTestimonials(tokens: DesignTokens, hints: string[]): Elemen
       ]),
       ...Array.from({ length: 3 }, (_, i) =>
         makeColumn(33, [
+          // FREE: testimonial widget is available in the free version
           makeWidget("testimonial", {
             content: hints[i] || `"An incredible experience working with this team. They delivered beyond expectations and were professional throughout."`,
             name: `Client ${i + 1}`,
@@ -310,6 +315,8 @@ export function buildPricing(tokens: DesignTokens, hints: string[]): ElementorSe
   const { top, bottom } = spacingFromTokens(tokens);
   const tiers = ["Starter", "Professional", "Enterprise"];
   const prices = ["$29", "$79", "$199"];
+  const radius = radiusFromTokens(tokens);
+
   return makeSection(
     {
       layout: "full_width",
@@ -327,26 +334,33 @@ export function buildPricing(tokens: DesignTokens, hints: string[]): ElementorSe
           title_color: tokens.textColor,
         }),
       ]),
+      // FREE: build each pricing card manually with free widgets instead of Pro price-table
       ...tiers.map((tier, i) =>
         makeColumn(33, [
-          makeWidget("price-table", {
-            heading: tier,
-            price: prices[i],
-            period: "/month",
-            features_list: [
-              { item_text: hints[0] || "Core feature included" },
-              { item_text: hints[1] || "Priority support" },
-              { item_text: hints[2] || "Analytics dashboard" },
-            ],
-            button_text: "Get Started",
-            button_background_color: i === 1 ? tokens.primaryColor : "transparent",
-            button_text_color: i === 1 ? "#ffffff" : tokens.primaryColor,
-            background_color: i === 1 ? tokens.primaryColor + "15" : tokens.backgroundColor,
-            border_width: { unit: "px", top: "1", right: "1", bottom: "1", left: "1" },
-            border_color: i === 1 ? tokens.primaryColor : tokens.secondaryColor + "44",
-            border_radius: { unit: "px", size: radiusFromTokens(tokens) },
-            heading_color: tokens.textColor,
-            price_color: tokens.primaryColor,
+          makeWidget("html", {
+            html: `<div style="
+              border:1px solid ${i === 1 ? tokens.primaryColor : tokens.secondaryColor + "44"};
+              border-radius:${radius}px;
+              padding:32px 24px;
+              background:${i === 1 ? tokens.primaryColor + "15" : "transparent"};
+              text-align:center;
+              font-family:'${tokens.bodyFont}',sans-serif;
+            ">
+              <p style="font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:${tokens.textColor}88;margin-bottom:8px">${tier}</p>
+              <p style="font-size:48px;font-weight:800;color:${tokens.primaryColor};margin:0 0 4px">${prices[i]}</p>
+              <p style="font-size:13px;color:${tokens.textColor}66;margin-bottom:24px">/month</p>
+              <ul style="list-style:none;padding:0;margin:0 0 28px;text-align:left">
+                ${hints.slice(0, 3).map((h) => `<li style="padding:8px 0;border-bottom:1px solid ${tokens.secondaryColor}22;color:${tokens.textColor}bb;font-size:14px">✓ ${h}</li>`).join("")}
+              </ul>
+              <a href="#" style="
+                display:block;padding:12px 24px;
+                background:${i === 1 ? tokens.primaryColor : "transparent"};
+                color:${i === 1 ? "#ffffff" : tokens.primaryColor};
+                border:2px solid ${tokens.primaryColor};
+                border-radius:${radius}px;
+                text-decoration:none;font-weight:600;font-size:14px
+              ">Get Started</a>
+            </div>`,
           }),
         ])
       ),
@@ -381,7 +395,6 @@ export function buildCTA(tokens: DesignTokens, hints: string[]): ElementorSectio
           size: "lg",
           background_color: "#ffffff",
           button_text_color: tokens.primaryColor,
-          hover_color: tokens.secondaryColor,
           border_radius: { unit: "px", size: radiusFromTokens(tokens) },
           typography_font_weight: "700",
         }),
@@ -392,6 +405,7 @@ export function buildCTA(tokens: DesignTokens, hints: string[]): ElementorSectio
 
 export function buildContact(tokens: DesignTokens, hints: string[]): ElementorSection {
   const { top, bottom } = spacingFromTokens(tokens);
+  const radius = radiusFromTokens(tokens);
   return makeSection(
     {
       layout: "full_width",
@@ -412,26 +426,23 @@ export function buildContact(tokens: DesignTokens, hints: string[]): ElementorSe
         }),
         makeWidget("icon-list", {
           icon_list: [
-            { id: uid(), text: "hello@company.com", selected_icon: { library: "solid", value: ["fas", "envelope"] } },
-            { id: uid(), text: "+1 (555) 000-0000", selected_icon: { library: "solid", value: ["fas", "phone"] } },
-            { id: uid(), text: "123 Main St, City, Country", selected_icon: { library: "solid", value: ["fas", "location-dot"] } },
+            { id: uid(), text: "hello@company.com", selected_icon: { library: "solid", value: "fas fa-envelope" } },
+            { id: uid(), text: "+1 (555) 000-0000", selected_icon: { library: "solid", value: "fas fa-phone" } },
+            { id: uid(), text: "123 Main St, City", selected_icon: { library: "solid", value: "fas fa-location-dot" } },
           ],
           icon_color: tokens.primaryColor,
           text_color: tokens.textColor,
         }),
       ]),
       makeColumn(50, [
-        makeWidget("form", {
-          form_name: "Contact Form",
-          form_fields: [
-            { field_type: "text", field_label: "Your Name", field_placeholder: "John Doe", required: "true", width: "100" },
-            { field_type: "email", field_label: "Email Address", field_placeholder: "john@example.com", required: "true", width: "100" },
-            { field_type: "textarea", field_label: "Message", field_placeholder: "How can we help?", required: "true", width: "100", rows: 5 },
-          ],
-          button_text: "Send Message",
-          button_background_color: tokens.primaryColor,
-          button_text_color: "#ffffff",
-          input_border_radius: { unit: "px", size: radiusFromTokens(tokens) },
+        // FREE: html widget with a real HTML form instead of Pro form widget
+        makeWidget("html", {
+          html: `<form style="display:flex;flex-direction:column;gap:12px;font-family:'${tokens.bodyFont}',sans-serif">
+            <input type="text" placeholder="Your Name" style="padding:12px 16px;border:1px solid ${tokens.secondaryColor}44;border-radius:${radius}px;background:transparent;color:${tokens.textColor};font-size:14px;outline:none" />
+            <input type="email" placeholder="Email Address" style="padding:12px 16px;border:1px solid ${tokens.secondaryColor}44;border-radius:${radius}px;background:transparent;color:${tokens.textColor};font-size:14px;outline:none" />
+            <textarea placeholder="Your message..." rows="5" style="padding:12px 16px;border:1px solid ${tokens.secondaryColor}44;border-radius:${radius}px;background:transparent;color:${tokens.textColor};font-size:14px;outline:none;resize:vertical"></textarea>
+            <button type="submit" style="padding:14px 24px;background:${tokens.primaryColor};color:#fff;border:none;border-radius:${radius}px;font-size:15px;font-weight:600;cursor:pointer">Send Message</button>
+          </form>`,
         }),
       ]),
     ]
@@ -440,6 +451,7 @@ export function buildContact(tokens: DesignTokens, hints: string[]): ElementorSe
 
 export function buildPortfolio(tokens: DesignTokens, hints: string[]): ElementorSection {
   const { top, bottom } = spacingFromTokens(tokens);
+  const radius = radiusFromTokens(tokens);
   return makeSection(
     {
       layout: "full_width",
@@ -456,16 +468,23 @@ export function buildPortfolio(tokens: DesignTokens, hints: string[]): Elementor
           typography_font_family: tokens.headingFont,
           title_color: tokens.textColor,
         }),
-        makeWidget("portfolio", {
-          columns: "3",
-          orderby: "date",
-          order: "DESC",
-          show_filter: "yes",
-          item_ratio: { unit: "%", size: 66.66 },
-          overlay_background_color: tokens.primaryColor + "dd",
-          overlay_text_color: "#ffffff",
-        }),
       ]),
+      // FREE: image-box widgets instead of Pro portfolio widget
+      ...Array.from({ length: 3 }, (_, i) =>
+        makeColumn(33, [
+          makeWidget("image-box", {
+            image: { url: `https://placehold.co/600x400/${tokens.primaryColor.replace("#", "")}/fff?text=Project+${i + 1}` },
+            title_text: hints[i + 1] || `Project ${i + 1}`,
+            description_text: "A brief description of this project and the results achieved for the client.",
+            image_border_radius: { unit: "px", size: radius },
+            title_color: tokens.textColor,
+            description_color: tokens.textColor + "88",
+            title_typography_font_family: tokens.headingFont,
+            title_typography_font_weight: "600",
+            position: "top",
+          }),
+        ])
+      ),
     ]
   );
 }
@@ -489,18 +508,20 @@ export function buildTeam(tokens: DesignTokens, hints: string[]): ElementorSecti
           title_color: tokens.textColor,
         }),
       ]),
+      // FREE: image-box widgets instead of Pro team-member widget
       ...Array.from({ length: 3 }, (_, i) =>
         makeColumn(33, [
-          makeWidget("team-member", {
-            image: { url: `https://placehold.co/200x200/888/fff?text=Team${i + 1}` },
-            name: hints[i] || `Team Member ${i + 1}`,
-            position: "Co-Founder",
-            description: "Passionate about building great products and serving our customers.",
-            image_size: "medium",
-            name_color: tokens.textColor,
-            position_color: tokens.primaryColor,
-            description_color: tokens.textColor + "99",
+          makeWidget("image-box", {
+            image: { url: `https://placehold.co/200x200/888/fff?text=${encodeURIComponent(hints[i]?.charAt(0) || "T")}` },
+            title_text: hints[i] || `Team Member ${i + 1}`,
+            description_text: "Co-Founder · Passionate about building great products and serving our customers.",
             image_border_radius: { unit: "%", size: 50 },
+            title_color: tokens.textColor,
+            description_color: tokens.primaryColor,
+            title_typography_font_family: tokens.headingFont,
+            title_typography_font_weight: "600",
+            position: "top",
+            align: "center",
           }),
         ])
       ),
@@ -531,8 +552,8 @@ export function buildFAQ(tokens: DesignTokens, hints: string[]): ElementorSectio
             tab_title: hint || `Question ${i + 1}`,
             tab_content: "Provide a clear and helpful answer to this question here. Be specific and address the core concern your audience has.",
           })),
-          icon: { library: "solid", value: ["fas", "plus"] },
-          icon_active: { library: "solid", value: ["fas", "minus"] },
+          icon: { library: "solid", value: "fas fa-plus" },
+          icon_active: { library: "solid", value: "fas fa-minus" },
           title_color: tokens.textColor,
           title_active_color: tokens.primaryColor,
           border_color: tokens.secondaryColor + "44",
@@ -548,7 +569,7 @@ export function buildFooter(tokens: DesignTokens, siteName: string, navItems: st
     {
       layout: "full_width",
       background_background: "classic",
-      background_color: tokens.textColor === "#ffffff" ? "#111111" : "#1a1a1a",
+      background_color: "#1a1a1a",
       padding: { unit: "px", top: "60", bottom: "40", left: "20", right: "20", isLinked: false },
     },
     [
@@ -575,7 +596,7 @@ export function buildFooter(tokens: DesignTokens, siteName: string, navItems: st
             id: uid(),
             text: item,
             link: { url: "#" },
-            selected_icon: { library: "solid", value: ["fas", "angle-right"] },
+            selected_icon: { library: "solid", value: "fas fa-angle-right" },
           })),
           text_color: "rgba(255,255,255,0.6)",
           icon_color: tokens.primaryColor,
@@ -588,17 +609,18 @@ export function buildFooter(tokens: DesignTokens, siteName: string, navItems: st
           title_color: "#ffffff",
           typography_font_family: tokens.headingFont,
         }),
+        // FREE: social-icons is available in the free version
         makeWidget("social-icons", {
           social_icon_list: [
-            { social_icon: { library: "brand", value: ["fab", "twitter"] }, link: { url: "#" } },
-            { social_icon: { library: "brand", value: ["fab", "linkedin"] }, link: { url: "#" } },
-            { social_icon: { library: "brand", value: ["fab", "instagram"] }, link: { url: "#" } },
+            { social_icon: { library: "brand", value: "fab fa-twitter" }, link: { url: "#" } },
+            { social_icon: { library: "brand", value: "fab fa-linkedin" }, link: { url: "#" } },
+            { social_icon: { library: "brand", value: "fab fa-instagram" }, link: { url: "#" } },
           ],
           icon_size: { unit: "px", size: 20 },
-          icon_color: "rgba(255,255,255,0.6)",
-          hover_primary_color: tokens.primaryColor,
-          shape: "rounded",
           color_type: "custom",
+          icon_primary_color: "rgba(255,255,255,0.6)",
+          icon_secondary_color: tokens.primaryColor,
+          shape: "rounded",
         }),
       ]),
     ]
@@ -623,6 +645,7 @@ export function buildBlog(tokens: DesignTokens, hints: string[]): ElementorSecti
           typography_font_family: tokens.headingFont,
           title_color: tokens.textColor,
         }),
+        // FREE: posts widget is available in the free version
         makeWidget("posts", {
           columns: "3",
           posts_per_page: "6",
@@ -653,21 +676,21 @@ export function buildSection(
   const hints = section.contentHints;
 
   switch (section.type) {
-    case "navbar":   return buildNavbar(tokens, siteName, navItems);
-    case "hero":     return buildHero(tokens, hints);
-    case "features": return buildFeatures(tokens, hints, section.columns);
-    case "about":    return buildAbout(tokens, hints);
-    case "services": return buildServices(tokens, hints);
+    case "navbar":       return buildNavbar(tokens, siteName, navItems);
+    case "hero":         return buildHero(tokens, hints);
+    case "features":     return buildFeatures(tokens, hints, section.columns);
+    case "about":        return buildAbout(tokens, hints);
+    case "services":     return buildServices(tokens, hints);
     case "testimonials": return buildTestimonials(tokens, hints);
-    case "pricing":  return buildPricing(tokens, hints);
-    case "cta":      return buildCTA(tokens, hints);
-    case "contact":  return buildContact(tokens, hints);
-    case "portfolio": return buildPortfolio(tokens, hints);
-    case "team":     return buildTeam(tokens, hints);
-    case "faq":      return buildFAQ(tokens, hints);
-    case "blog":     return buildBlog(tokens, hints);
-    case "footer":   return buildFooter(tokens, siteName, navItems);
-    default:         return buildCTA(tokens, hints);
+    case "pricing":      return buildPricing(tokens, hints);
+    case "cta":          return buildCTA(tokens, hints);
+    case "contact":      return buildContact(tokens, hints);
+    case "portfolio":    return buildPortfolio(tokens, hints);
+    case "team":         return buildTeam(tokens, hints);
+    case "faq":          return buildFAQ(tokens, hints);
+    case "blog":         return buildBlog(tokens, hints);
+    case "footer":       return buildFooter(tokens, siteName, navItems);
+    default:             return buildCTA(tokens, hints);
   }
 }
 
