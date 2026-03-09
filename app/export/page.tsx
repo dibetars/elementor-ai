@@ -34,9 +34,9 @@ export default function ExportPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-white">
       {/* Header */}
-      <header className="flex items-center justify-between px-8 py-5 border-b border-border">
+      <header className="flex items-center justify-between px-8 py-5 border-b border-border bg-white">
         <div className="flex items-center gap-4">
           <Link
             href="/plan"
