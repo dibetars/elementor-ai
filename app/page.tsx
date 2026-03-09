@@ -7,9 +7,9 @@ import {
   Globe,
   Image as ImageIcon,
   ArrowRight,
-  Zap,
   ChevronRight,
 } from "lucide-react";
+import Image from "next/image";
 import clsx from "clsx";
 import { InputMode } from "@/lib/types";
 
@@ -112,12 +112,7 @@ export default function HomePage() {
       {/* Header */}
       <header className="flex items-center justify-between px-8 py-6 border-b border-border">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-accent rounded-lg flex items-center justify-center">
-            <Zap size={16} className="text-white" />
-          </div>
-          <span className="font-display font-700 text-text text-lg tracking-tight">
-            elementor<span className="text-accent">AI</span>
-          </span>
+          <Image src="/logo.png" alt="ElementBuddy" width={140} height={36} priority />
         </div>
         <nav className="flex items-center gap-6">
           <a href="#" className="text-subtle text-sm hover:text-text transition-colors">

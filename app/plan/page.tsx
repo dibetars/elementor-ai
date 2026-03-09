@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SitePlan } from "@/lib/types";
 import SitePlanView from "@/components/SitePlanView";
-import { Zap, ArrowLeft, CheckCircle, AlertCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle, AlertCircle } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 
 export default function PlanPage() {
   const router = useRouter();
@@ -56,14 +57,7 @@ export default function PlanPage() {
             Back
           </Link>
           <div className="w-px h-4 bg-border" />
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-accent rounded flex items-center justify-center">
-              <Zap size={12} className="text-white" />
-            </div>
-            <span className="font-display font-bold text-text">
-              elementor<span className="text-accent">AI</span>
-            </span>
-          </div>
+          <Image src="/logo.png" alt="ElementBuddy" width={110} height={28} />
         </div>
 
         <div className="flex items-center gap-3">

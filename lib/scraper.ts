@@ -124,7 +124,7 @@ export async function scrapeSite(url: string): Promise<ScrapedSite> {
   const response = await fetch(url, {
     headers: {
       "User-Agent":
-        "Mozilla/5.0 (compatible; SiteAnalyzer/1.0; +https://elementorai.com)",
+        "Mozilla/5.0 (compatible; ElementBuddy/1.0; +https://elementbuddy.app)",
       Accept: "text/html,application/xhtml+xml",
     },
     signal: AbortSignal.timeout(15000),
